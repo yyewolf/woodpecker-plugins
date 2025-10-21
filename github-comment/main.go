@@ -105,8 +105,8 @@ func messageFooter(id string) string {
 <p>
 <sub>
 ` + messageID + `  <br>
-Written at: ` + time.Now().Format(time.RFC3339) + `  <br>
-Written by [woodpecker-plugins/github-comment](https://github.com/yyewolf/woodpecker-plugins/github-comment)  <br>
+Date: ` + time.Now().Format(time.RFC3339) + `  <br>
+By <a href="https://github.com/yyewolf/woodpecker-plugins/github-comment">yyewolf/woodpecker-plugins/github-comment</a>  <br>
 </p>
 </details>`
 }
