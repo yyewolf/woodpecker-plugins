@@ -1,5 +1,10 @@
 # Woodpecker Plugins
 
+[![status-badge](https://woodpecker.yewolf.fr/api/badges/4/status.svg)](https://woodpecker.yewolf.fr/repos/4)
+![GitHub top language](https://img.shields.io/github/languages/top/yyewolf/woodpecker-plugins)
+![License](https://img.shields.io/github/license/yyewolf/woodpecker-plugins)
+
+
 A collection of Woodpecker CI plugins for GitHub integration.
 
 ## Plugins

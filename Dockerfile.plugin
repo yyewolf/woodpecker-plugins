@@ -1,0 +1,26 @@
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
+
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+ENV GOOS=${TARGETOS} \
+    GOARCH=${TARGETARCH} \
+    GOARM=${TARGETVARIANT}
+RUN CGO_ENABLED=0 go build -a -installsuffix cgo -o plugin .
+
+RUN apk --no-cache add ca-certificates
+RUN echo "nobody:*:65534:65534:nobody:/_nonexistent:/bin/false" > /passwd
+
+FROM scratch
+COPY --from=builder /app/plugin .
+COPY --from=builder /etc/ssl/certs /etc/ssl/certs
+COPY --from=builder /passwd /etc/passwd
+ENTRYPOINT ["/plugin"]

@@ -170,13 +170,33 @@ steps:
 
 ## Building
 
+### Local Build
 ```bash
 go build -o github-comment .
 ```
 
-## Docker
+### Docker
 
+#### Single Architecture
 ```bash
 docker build -t github-comment .
 docker run --rm -e PLUGIN_GITHUB_TOKEN=token -e PLUGIN_COMMENT="Hello!" github-comment
+```
+
+#### Multi-Architecture
+```bash
+# Create and use a buildx builder
+docker buildx create --name multiarch --use
+
+# Build for multiple architectures
+docker buildx build \
+  --platform linux/amd64,linux/arm64,linux/arm/v7 \
+  -t github-comment:multiarch \
+  --push .
+
+# Or build and load for local testing (single arch)
+docker buildx build \
+  --platform linux/amd64 \
+  -t github-comment:local \
+  --load .
 ```
