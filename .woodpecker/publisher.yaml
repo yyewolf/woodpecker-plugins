@@ -6,6 +6,7 @@ when:
 matrix:
   PLUGIN:
   - github-app-token
+  - github-app-token-svc
   - github-comment
 
 steps:

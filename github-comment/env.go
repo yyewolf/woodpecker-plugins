@@ -14,8 +14,10 @@ type Environnement struct {
 	} `envPrefix:"CI_"`
 
 	Plugin struct {
-		GithubToken     string `env:"GITHUB_TOKEN"`
-		GithubTokenPath string `env:"GITHUB_TOKEN_PATH,file"`
+		ServiceURL     string `env:"SERVICE_URL,required"`
+		MtlsCACert     string `env:"MTLS_CA_CERT,required"`
+		MtlsClientCert string `env:"MTLS_CLIENT_CERT,required"`
+		MtlsClientKey  string `env:"MTLS_CLIENT_KEY,required"`
 
 		Comment       string `env:"COMMENT"`
 		CommentPath   string `env:"COMMENT_PATH,file"`

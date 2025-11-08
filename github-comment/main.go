@@ -19,10 +19,6 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	if env.Plugin.GithubToken == "" && env.Plugin.GithubTokenPath == "" {
-		logrus.Fatal("Either settings.github_token or settings.github_token_path must be set")
-	}
-
 	if env.Plugin.Comment == "" && env.Plugin.CommentPath == "" {
 		logrus.Fatal("Either settings.comment or settings.comment_path must be set")
 	}
@@ -31,7 +27,11 @@ func main() {
 		logrus.Fatal("settings.message_id must be set when update_in_place is true")
 	}
 
-	githubToken := coalesce(env.Plugin.GithubToken, env.Plugin.GithubTokenPath)
+	githubToken, err := GetToken(env.Plugin.ServiceURL, env.Plugin.MtlsClientCert, env.Plugin.MtlsClientKey, env.Plugin.MtlsCACert)
+	if err != nil {
+		logrus.Fatalf("Error getting GitHub token: %v", err)
+	}
+
 	comment := coalesce(env.Plugin.Comment, env.Plugin.CommentPath)
 	repo := coalesce(env.Plugin.Repo, env.CI.Repo)
 	pr := coalesce(env.Plugin.PullRequest, env.CI.Commit.PullRequest)
