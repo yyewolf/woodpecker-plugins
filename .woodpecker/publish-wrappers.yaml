@@ -1,0 +1,30 @@
+when:
+- event: tag
+- event: manual
+- event: cron
+
+matrix:
+  WRAPPER:
+  - github-token-wrapper
+
+steps:
+- name: publish
+  image: woodpeckerci/plugin-docker-buildx
+  settings:
+    platforms:
+    - linux/386
+    - linux/amd64
+    - linux/arm
+    - linux/arm64
+    repo: registry.yewolf.fr/yyewolf/woodpecker-plugins/${WRAPPER}
+    registry: registry.yewolf.fr
+    dockerfile: Dockerfile.wrapper
+    cache_from:
+    - type=registry\\,ref=registry.yewolf.fr/yyewolf/woodpecker-plugins/${WRAPPER}:cache
+    cache_to: type=registry,ref=registry.yewolf.fr/yyewolf/woodpecker-plugins/${WRAPPER}:cache
+    context: ${WRAPPER}
+    auto_tag: true
+    username:
+      from_secret: REGISTRY_USERNAME
+    password:
+      from_secret: REGISTRY_PASSWORD
