@@ -1,0 +1,28 @@
+when:
+- event: tag
+- event: manual
+- event: cron
+
+matrix:
+  PLUGIN:
+  - release-please
+
+steps:
+- name: publish
+  image: woodpeckerci/plugin-docker-buildx
+  settings:
+    platforms:
+    - linux/amd64
+    - linux/arm64
+    repo: registry.yewolf.fr/yyewolf/woodpecker-plugins/${PLUGIN}
+    registry: registry.yewolf.fr
+    dockerfile: ${PLUGIN}/Dockerfile
+    cache_from:
+    - type=registry\\,ref=registry.yewolf.fr/yyewolf/woodpecker-plugins/${PLUGIN}:cache
+    cache_to: type=registry,ref=registry.yewolf.fr/yyewolf/woodpecker-plugins/${PLUGIN}:cache
+    context: ${PLUGIN}
+    auto_tag: true
+    username:
+      from_secret: REGISTRY_USERNAME
+    password:
+      from_secret: REGISTRY_PASSWORD
