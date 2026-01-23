@@ -6,6 +6,7 @@ when:
 matrix:
   PLUGIN:
   - release-please
+  - helm-release-oci
 
 steps:
 - name: publish
