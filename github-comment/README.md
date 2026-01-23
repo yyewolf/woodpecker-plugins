@@ -8,12 +8,24 @@ This plugin allows you to post automated comments to GitHub pull requests during
 
 ## Usage
 
+This plugin requires the `github-app-token-svc` service to be running. It uses mTLS to securely authenticate and retrieve a GitHub token, ensuring that only trusted services with valid certificates can perform actions.
+
+You can generate the required PEM certificates (CA, server, and client keys) using the `generate_pem.sh` script provided in the [github-app-token-svc](../github-app-token-svc) directory.
+
+> ⚠️ **Important:** Do not hardcode certificates and keys in your pipeline file. Use Woodpecker CI secrets to store these sensitive values securely.
+
 ```yaml
 steps:
   - name: comment-pr
     image: your-registry/github-comment
     settings:
-      github_token: ${GITHUB_TOKEN}
+      service_url: https://github-app-token-svc:8443/token
+      mtls_ca_cert:
+        from_secret: mtls_ca_cert
+      mtls_client_cert:
+        from_secret: mtls_client_cert
+      mtls_client_key:
+        from_secret: mtls_client_key
       comment: |
         ## Build Status
         ✅ Build completed successfully!
@@ -28,8 +40,10 @@ steps:
 
 | Parameter | Required | Description | Default |
 |-----------|----------|-------------|---------|
-| `github_token` | No* | GitHub token for authentication | |
-| `github_token_path` | No* | Path to file containing GitHub token | |
+| `service_url` | Yes | URL of the github-app-token-svc | |
+| `mtls_ca_cert` | Yes | CA Certificate content | |
+| `mtls_client_cert` | Yes | Client Certificate content | |
+| `mtls_client_key` | Yes | Client Key content | |
 | `comment` | No* | Comment text to post | |
 | `comment_path` | No* | Path to file containing comment text | |
 | `repo` | No | Repository in format `owner/repo` | Uses `CI_REPO` |
@@ -37,7 +51,6 @@ steps:
 | `message_id` | No | Unique identifier for the comment | |
 | `update_in_place` | No | Update existing comment instead of creating new | `false` |
 
-*Either `github_token` or `github_token_path` must be provided.
 *Either `comment` or `comment_path` must be provided.
 
 ## Environment Variables
@@ -46,8 +59,10 @@ The plugin uses the following environment variables:
 
 - `CI_REPO` - Repository name (automatically provided by Woodpecker)
 - `CI_COMMIT_PULL_REQUEST` - Pull request number (automatically provided by Woodpecker)
-- `PLUGIN_GITHUB_TOKEN` - GitHub authentication token
-- `PLUGIN_GITHUB_TOKEN_PATH` - Path to GitHub token file
+- `PLUGIN_SERVICE_URL` - URL of the token service
+- `PLUGIN_MTLS_CA_CERT` - CA certificate
+- `PLUGIN_MTLS_CLIENT_CERT` - Client certificate
+- `PLUGIN_MTLS_CLIENT_KEY` - Client private key
 - `PLUGIN_COMMENT` - Comment text content
 - `PLUGIN_COMMENT_PATH` - Path to comment text file
 - `PLUGIN_REPO` - Override repository name
@@ -63,7 +78,13 @@ Create a new comment on every run:
 
 ```yaml
 settings:
-  github_token: ${GITHUB_TOKEN}
+  service_url: https://github-app-token-svc:8443/token
+  mtls_ca_cert:
+    from_secret: mtls_ca_cert
+  mtls_client_cert:
+    from_secret: mtls_client_cert
+  mtls_client_key:
+    from_secret: mtls_client_key
   comment: "🚀 Deployment started at $(date)"
 ```
 
@@ -73,7 +94,13 @@ Update the same comment on every run using a message ID:
 
 ```yaml
 settings:
-  github_token: ${GITHUB_TOKEN}
+  service_url: https://github-app-token-svc:8443/token
+  mtls_ca_cert:
+    from_secret: mtls_ca_cert
+  mtls_client_cert:
+    from_secret: mtls_client_cert
+  mtls_client_key:
+    from_secret: mtls_client_key
   comment: "📊 Current test results: 95% pass rate"
   message_id: test-results
   update_in_place: true
@@ -85,7 +112,13 @@ Load comment content from a file:
 
 ```yaml
 settings:
-  github_token: ${GITHUB_TOKEN}
+  service_url: https://github-app-token-svc:8443/token
+  mtls_ca_cert:
+    from_secret: mtls_ca_cert
+  mtls_client_cert:
+    from_secret: mtls_client_cert
+  mtls_client_key:
+    from_secret: mtls_client_key
   comment_path: ./reports/coverage-summary.md
   message_id: coverage-report
   update_in_place: true
@@ -122,7 +155,13 @@ steps:
   - name: notify-success
     image: your-registry/github-comment
     settings:
-      github_token: ${GITHUB_TOKEN}
+      service_url: https://github-app-token-svc:8443/token
+      mtls_ca_cert:
+        from_secret: mtls_ca_cert
+      mtls_client_cert:
+        from_secret: mtls_client_cert
+      mtls_client_key:
+        from_secret: mtls_client_key
       comment: |
         ## ✅ Build Successful
         
@@ -137,7 +176,13 @@ steps:
   - name: notify-failure
     image: your-registry/github-comment
     settings:
-      github_token: ${GITHUB_TOKEN}
+      service_url: https://github-app-token-svc:8443/token
+      mtls_ca_cert:
+        from_secret: mtls_ca_cert
+      mtls_client_cert:
+        from_secret: mtls_client_cert
+      mtls_client_key:
+        from_secret: mtls_client_key
       comment: |
         ## ❌ Build Failed
         
@@ -162,7 +207,13 @@ steps:
   - name: post-results
     image: your-registry/github-comment
     settings:
-      github_token: ${GITHUB_TOKEN}
+      service_url: https://github-app-token-svc:8443/token
+      mtls_ca_cert:
+        from_secret: mtls_ca_cert
+      mtls_client_cert:
+        from_secret: mtls_client_cert
+      mtls_client_key:
+        from_secret: mtls_client_key
       comment_path: test-results.txt
       message_id: test-results
       update_in_place: true
@@ -180,7 +231,13 @@ go build -o github-comment .
 #### Single Architecture
 ```bash
 docker build -t github-comment .
-docker run --rm -e PLUGIN_GITHUB_TOKEN=token -e PLUGIN_COMMENT="Hello!" github-comment
+docker run --rm \
+  -e PLUGIN_SERVICE_URL="https://github-app-token-svc:8443/token" \
+  -e PLUGIN_MTLS_CA_CERT="$(cat ca.crt)" \
+  -e PLUGIN_MTLS_CLIENT_CERT="$(cat client.crt)" \
+  -e PLUGIN_MTLS_CLIENT_KEY="$(cat client.key)" \
+  -e PLUGIN_COMMENT="Hello!" \
+  github-comment
 ```
 
 #### Multi-Architecture
