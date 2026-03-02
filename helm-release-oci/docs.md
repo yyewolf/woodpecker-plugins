@@ -31,7 +31,8 @@ The plugin is built to run on:
 | `registry_username` | _none_                      | Username for registry authentication                                                           |
 | `registry_password` | _none_                      | Password or token for registry authentication                                                  |
 | `registry_path`     | _none_                      | **Required**. The path/namespace in the registry (e.g., `owner/repo` or `library`)             |
-| `chart_path`        | _none_                      | **Required**. Path to the packaged helm chart `.tgz` file                                      |
+| `build_dependencies`| `false`                     | Run `helm dependency build` before publishing. Requires `chart_path` to point to a chart directory |
+| `chart_path`        | _none_                      | **Required**. Path to chart package `.tgz`, or chart directory when `build_dependencies=true` |
 
 ## Examples
 
@@ -74,4 +75,22 @@ pipeline:
       registry: public-registry.example.com
       registry_path: public/charts
       chart_path: my-chart-0.1.0.tgz
+```
+
+### Build dependencies before push
+
+When `build_dependencies` is enabled, set `chart_path` to the chart directory (not a `.tgz` package). The plugin will run `helm dependency build`, package the chart, and push the generated archive.
+
+```yaml
+pipeline:
+  publish-with-deps:
+    image: ghcr.io/yyewolf/woodpecker-plugins/helm-release-oci
+    settings:
+      registry: ghcr.io
+      registry_username: myuser
+      registry_password:
+        from_secret: cr_password
+      registry_path: my-org/charts
+      build_dependencies: true
+      chart_path: ./charts/my-chart
 ```

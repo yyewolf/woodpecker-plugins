@@ -12,6 +12,8 @@ type Environnement struct {
 		RegistryPassword string `env:"REGISTRY_PASSWORD"`
 		RegistryPath     string `env:"REGISTRY_PATH,required"`
 
+		BuildDependencies bool `env:"BUILD_DEPENDENCIES" envDefault:"false"`
+
 		ChartPath string `env:"CHART_PATH,required"`
 	} `envPrefix:"PLUGIN_"`
 }
