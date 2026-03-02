@@ -4,10 +4,20 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 )
+
+func runHelmCommand(args ...string) {
+	cmd := exec.Command("helm", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		logrus.Fatalf("Error running helm command (%s): %v", strings.Join(args, " "), err)
+	}
+}
 
 func main() {
 	// Load environment variables
@@ -37,14 +47,44 @@ func main() {
 	}
 
 	// 2. Helm Push
+	chartPath := env.Plugin.ChartPath
+
+	if env.Plugin.BuildDependencies {
+		if strings.HasSuffix(chartPath, ".tgz") {
+			logrus.Fatalf("build_dependencies=true requires chart_path to be a chart directory, got packaged chart: %s", chartPath)
+		}
+
+		logrus.Infof("Building chart dependencies for %s", chartPath)
+		runHelmCommand("dependency", "build", chartPath)
+
+		logrus.Infof("Packaging chart from %s", chartPath)
+		packageArgs := []string{"package", chartPath}
+		if env.Plugin.PackageFlags != "" {
+			packageArgs = append(packageArgs, strings.Fields(env.Plugin.PackageFlags)...)
+		}
+		runHelmCommand(packageArgs...)
+
+		chartName := filepath.Base(strings.TrimRight(chartPath, "/"))
+		packages, err := filepath.Glob(filepath.Join(".", chartName+"-*.tgz"))
+		if err != nil {
+			logrus.Fatalf("Error looking up packaged chart: %v", err)
+		}
+		if len(packages) == 0 {
+			logrus.Fatalf("No packaged chart found after helm package for chart %s", chartPath)
+		}
+
+		chartPath = packages[len(packages)-1]
+		logrus.Infof("Using packaged chart: %s", chartPath)
+	}
+
 	// Construct the OCI URL
 	// Schema: oci://<registry>/<path>
 	// registryHost is clean, but for push URL we need oci://
 	registryPath := strings.TrimPrefix(env.Plugin.RegistryPath, "/")
 	ociURL := fmt.Sprintf("oci://%s/%s", registryHost, registryPath)
-	logrus.Infof("Pushing chart %s to %s", env.Plugin.ChartPath, ociURL)
+	logrus.Infof("Pushing chart %s to %s", chartPath, ociURL)
 
-	cmd := exec.Command("helm", "push", env.Plugin.ChartPath, ociURL)
+	cmd := exec.Command("helm", "push", chartPath, ociURL)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
