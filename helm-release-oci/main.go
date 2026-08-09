@@ -75,6 +75,17 @@ func main() {
 
 		chartPath = packages[len(packages)-1]
 		logrus.Infof("Using packaged chart: %s", chartPath)
+	} else if strings.ContainsAny(chartPath, "*?[") {
+		logrus.Infof("Expanding glob pattern for chart path: %s", chartPath)
+		packages, err := filepath.Glob(chartPath)
+		if err != nil {
+			logrus.Fatalf("Error looking up packaged chart: %v", err)
+		}
+		if len(packages) == 0 {
+			logrus.Fatalf("No packaged chart found matching glob %s", chartPath)
+		}
+		chartPath = packages[len(packages)-1]
+		logrus.Infof("Using packaged chart: %s", chartPath)
 	}
 
 	// Construct the OCI URL
